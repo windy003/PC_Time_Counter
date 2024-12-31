@@ -5,6 +5,20 @@ from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QFont, QIcon, QAction
 import sys
 import time
+import os
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+        print(f"使用 MEIPASS 路径: {base_path}")
+    else:
+        base_path = os.path.abspath(".")
+        print(f"使用当前路径: {base_path}")
+    
+    full_path = os.path.join(base_path, relative_path)
+    print(f"完整路径: {full_path}")
+    print(f"文件是否存在: {os.path.exists(full_path)}")
+    return full_path
 
 class TimerWindow(QMainWindow):
     def __init__(self):
@@ -13,10 +27,27 @@ class TimerWindow(QMainWindow):
         self.showMaximized()
         
         # 设置应用图标
-        self.setWindowIcon(QIcon('icon.png'))
+        self.setWindowIcon(QIcon(resource_path('icon.png')))
         
         # 创建系统托盘图标
-        self.create_tray_icon()
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon(resource_path('icon.png')))
+        
+        # 创建托盘菜单
+        tray_menu = QMenu()
+        show_action = tray_menu.addAction("显示")
+        quit_action = tray_menu.addAction("退出")
+        show_action.triggered.connect(self.show)
+        quit_action.triggered.connect(app.quit)
+        
+        # 设置托盘菜单
+        self.tray_icon.setContextMenu(tray_menu)
+        
+        # 确保显示托盘图标
+        self.tray_icon.show()
+        
+        # 可选：添加托盘图标的提示文字
+        self.tray_icon.setToolTip("计时器")
         
         # 初始化计时器状态
         self.is_running = False
@@ -165,42 +196,6 @@ class TimerWindow(QMainWindow):
         if event.key() == Qt.Key.Key_Escape:
             self.close()
 
-    def create_tray_icon(self):
-        # 创建系统托盘图标
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon('icon.ico'))
-        
-        # 创建托盘菜单
-        tray_menu = QMenu()
-        
-        # 添加显示/隐藏动作
-        show_action = QAction("显示", self)
-        show_action.triggered.connect(self.show)
-        tray_menu.addAction(show_action)
-        
-        # 添加退出动作
-        quit_action = QAction("退出", self)
-        quit_action.triggered.connect(self.quit_app)
-        tray_menu.addAction(quit_action)
-        
-        # 设置托盘菜单
-        self.tray_icon.setContextMenu(tray_menu)
-        
-        # 设置托盘图标提示文字
-        self.tray_icon.setToolTip("计时器")
-        
-        # 显示托盘图标
-        self.tray_icon.show()
-        
-        # 连接托盘图标的点击信号
-        self.tray_icon.activated.connect(self.tray_icon_activated)
-
-    def tray_icon_activated(self, reason):
-        # 双击托盘图标时显示窗口
-        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
-            self.show()
-            self.showMaximized()
-
     def closeEvent(self, event):
         # 重写关闭事件，点击关闭按钮时最小化到托盘
         event.ignore()  # 忽略关闭事件
@@ -220,13 +215,12 @@ class TimerWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     
-    # 检查系统是否支持系统托盘
     if not QSystemTrayIcon.isSystemTrayAvailable():
         print("系统不支持托盘图标")
         sys.exit(1)
         
-    # 设置应用程序图标
-    app.setWindowIcon(QIcon('icon.png'))
+    icon_path = resource_path('icon.png')
+    app.setWindowIcon(QIcon(icon_path))
     
     window = TimerWindow()
     window.show()

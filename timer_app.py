@@ -32,6 +32,7 @@ class TimerWindow(QMainWindow):
         # 创建系统托盘图标
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(QIcon(resource_path('icon.png')))
+        self.tray_icon.activated.connect(self.tray_icon_activated)
         
         # 创建托盘菜单
         tray_menu = QMenu()
@@ -211,6 +212,11 @@ class TimerWindow(QMainWindow):
         # 完全退出应用程序
         self.tray_icon.hide()  # 隐藏托盘图标
         QApplication.quit()     # 退出应用
+
+    def tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self.show()
+            self.setWindowState(Qt.WindowState.WindowActive)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
